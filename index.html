@@ -13,7 +13,7 @@
                 height: 100vh;
                 object-fit: cover;
             }
-            #ncounter {
+            #counter {
                 position: absolute;
                 top: 20px;
                 left: 50%;
@@ -31,7 +31,7 @@
                 top: 120px;
                 left: 50%;
                 transform: translateX(-50%);
-                color: #ff4d4d;
+                color: #91b1ec;
                 font-size: 32px;
                 font-family: Arial, sans-serif;
                 z-index: 10;
@@ -55,7 +55,7 @@
         <canvas id="overlay"></canvas>
         <div id="counter">0</div>
         <div id="timer"></div>
-        <button id="startBtn">Click to Start</button>
+        <button id="startBtn">Ready to 67!</button>
 
         <script>
             const webcamVideo = document.getElementById("webcamVideo");
@@ -65,7 +65,7 @@
             const counterDiv = document.getElementById("counter");
             const timerDiv = document.getElementById("timer");
 
-            let count = 0, gameActive = false, timeLeft = 60;
+            let count = 0, gameActive = false, timeLeft = 15;
             let leftState = null, rightState = null;
             let leftReps = 0, rightReps = 0;
 
@@ -77,8 +77,8 @@
             window.addEventListener("resize", resizeCanvas);
 
             function startTimer() {
-                timeLeft = 60;
-                timerDiv.textContent = "60s";
+                timeLeft = 15;
+                timerDiv.textContent = "15s";
                 const interval = setInterval(() => {
                     timeLeft--;
                     timerDiv.textContent = timeLeft + "s";
