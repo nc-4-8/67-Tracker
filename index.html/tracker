@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>67 Tracker</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { background: black; overflow: hidden; }
+            video, canvas {
+                position: absolute;
+                width: 100vw;
+                height: 100vh;
+                object-fit: cover;
+            }
+            #ncounter {
+                position: absolute;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                color: white;
+                font-size: 64px;
+                font-family: Arial, sans-serif;
+                background: rgba(0,0,0,0.6);
+                padding: 10px 40px;
+                border-radius: 20px;
+                z-index: 10;
+            }
+            #timer {
+                position: absolute;
+                top: 120px;
+                left: 50%;
+                transform: translateX(-50%);
+                color: #ff4d4d;
+                font-size: 32px;
+                font-family: Arial, sans-serif;
+                z-index: 10;
+            }
+            #startBtn {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                padding: 20px 40px;
+                font-size: 20px;
+                z-index: 10;
+            }
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    </head>
+    <body>
+        <video id="webcamVideo" autoplay playsinline muted></video>
+        <canvas id="overlay"></canvas>
+        <div id="counter">0</div>
+        <div id="timer"></div>
+        <button id="startBtn">Click to Start</button>
+
+        <script>
+            const webcamVideo = document.getElementById("webcamVideo");
+            const startBtn = document.getElementById("startBtn");
+            const canvas = document.getElementById("overlay");
+            const ctx = canvas.getContext("2d");
+            const counterDiv = document.getElementById("counter");
+            const timerDiv = document.getElementById("timer");
+
+            let count = 0, gameActive = false, timeLeft = 20;
+            let leftState = null, rightState = null;
+            let leftReps = 0, rightReps = 0;
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resizeCanvas();
+            window.addEventListener("resize", resizeCanvas);
+
+            function startTimer() {
+                timeLeft = 20;
+                timerDiv.textContent = "20s";
+                const interval = setInterval(() => {
+                    timeLeft--;
+                    timerDiv.textContent = timeLeft + "s";
+                    if (timeLeft <= 0) {
+                        clearInterval(interval);
+                        gameActive = false;
+                        timerDiv.textContent = "Done! Score: " + count;
+                    }
+                }, 1000);
+            }
+
+            function countReps(landmarks) {
+                const leftWrist = landmarks[15];
+                const rightWrist = landmarks[16];
+                const leftShoulder = landmarks[11];
+                const rightShoulder = landmarks[12];
+                const leftHip = landmarks[23];
+                const rightHip = landmarks[24];
+
+                const leftMid = (leftShoulder.y + leftHip.y) / 2;
+                const rightMid = (rightShoulder.y + rightHip.y) / 2;
+
+                const leftUp = leftWrist.y < leftMid;
+                const rightUp = rightWrist.y < rightMid;
+
+                if (leftUp && leftState !== "up") leftState = "up";
+                else if (!leftUp && leftState === "up") { leftState = "down"; leftReps++; }
+
+                if (rightUp && rightState !== "up") rightState = "up";
+                else if (!rightUp && rightState === "up") { rightState = "down"; rightReps++; }
+
+                count = Math.floor((leftReps + rightReps) / 2);
+                counterDiv.textContent = count;
+            }
+
+            const pose = new Pose({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+            });
+            pose.setOptions({
+                modelComplexity: 1,
+                smoothLandmarks: true,
+                minDetectionConfidence: 0.6,
+                minTrackingConfidence: 0.6,
+            });
+            pose.onResults((results) => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (results.poseLandmarks) {
+                    drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: "#00FF00", lineWidth: 2 });
+                    drawLandmarks(ctx, results.poseLandmarks, { color: "#FF0000", lineWidth: 1, radius: 4 });
+                    if (gameActive) countReps(results.poseLandmarks);
+                }
+            });
+
+            startBtn.addEventListener("click", () => {
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+                    .then((stream) => {
+                        webcamVideo.srcObject = stream;
+                        startBtn.textContent = "Start 67!";
+                        startBtn.onclick = () => {
+                            count = 0; leftReps = 0; rightReps = 0;
+                            leftState = null; rightState = null;
+                            gameActive = true;
+                            startBtn.style.display = "none";
+                            startTimer();
+                        };
+
+                        const camera = new Camera(webcamVideo, {
+                            onFrame: async () => { await pose.send({ image: webcamVideo }); },
+                            width: 1280, height: 720,
+                        });
+                        camera.start();
+                    })
+                    .catch((err) => alert(err.name + ": " + err.message));
+            });
+        </script>
+    </body>
+</html>
