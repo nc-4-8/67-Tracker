@@ -136,6 +136,7 @@
                 navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
                     .then((stream) => {
                         webcamVideo.srcObject = stream;
+                        startBtn.textContent = "Start!";
                         startBtn.onclick = () => {
                             count = 0; leftReps = 0; rightReps = 0;
                             leftState = null; rightState = null;
