@@ -77,8 +77,8 @@
             window.addEventListener("resize", resizeCanvas);
 
             function startTimer() {
-                timeLeft = 20;
-                timerDiv.textContent = "20s";
+                timeLeft = 60;
+                timerDiv.textContent = "60s";
                 const interval = setInterval(() => {
                     timeLeft--;
                     timerDiv.textContent = timeLeft + "s";
@@ -136,7 +136,6 @@
                 navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
                     .then((stream) => {
                         webcamVideo.srcObject = stream;
-                        startBtn.textContent = "Start 67!";
                         startBtn.onclick = () => {
                             count = 0; leftReps = 0; rightReps = 0;
                             leftState = null; rightState = null;
